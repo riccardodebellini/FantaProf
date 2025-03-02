@@ -46,3 +46,5 @@ app.*.map.json
 
 build/*
 !build/web/
+
+lib/env.dart

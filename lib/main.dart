@@ -1,138 +1,120 @@
-import 'package:flutter_lucide/flutter_lucide.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'dart:ui';
 
-void main() {
+import 'package:fanta_prof/src/pages/login-signup/signup.page.dart';
+import 'package:fanta_prof/src/pages/public/about.page.dart';
+import 'package:fanta_prof/src/pages/reserved/classes.page.dart';
+import 'package:fanta_prof/src/pages/login-signup/login.page.dart';
+import 'package:fanta_prof/src/pages/reserved/settings.page.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart';
+
+import 'package:go_router/go_router.dart';
+
+import 'env.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+final supabase = Supabase.instance.client;
+final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
+
+main() async {
+  await Supabase.initialize(
+    url: Env.supabaseUrl,
+    anonKey: Env.supabaseAnonKey,
+  );
+  supabase.auth.onAuthStateChange.listen((state) {
+    _router.refresh();
+  });
+
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return ShadcnApp(theme: ThemeData(
-      colorScheme: ColorSchemes.lightNeutral(),
-      radius: 1.0,
-      surfaceOpacity: 0.55,
-      surfaceBlur: 20.0,
-    ),
-      home: HomePage(),
-      );
-  }
-}
-
-class HomePage extends StatelessWidget {
-  HomePage({super.key});
-
-  final ScrollController _controller = ScrollController();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      child: ListView(
-        controller: _controller,
-        children: [
-          Column(
-              mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                RichText(
-                  textAlign: TextAlign.center,
-                  text: TextSpan(
-                    style: DefaultTextStyle.of(context).style.copyWith(
-                        fontSize:
-                        Theme.of(context).typography.x6Large.fontSize),
-                    children: [
-                      const TextSpan(
-                        text: 'Coming ',
-                      ),
-                      TextSpan(
-                          text: 'Soon',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary)),
-                    ],
-                  ),
-                ),
-                const Gap(10),
-                const Text(
-                  'Stiamo lavorando duramente per offrirti qualcosa di incredibile. Resta sintonizzato!',
-                  textAlign: TextAlign.center,
-                ).lead(),
-                const Gap(10),
-
-                PrimaryButton(
-                  child: Text("Segui il progetto")
-                      , leading: Icon(LucideIcons.github),
-                  onPressed: () {
-                    print("press");
-                    final url = Uri.parse('https://github.com/riccardodebellini/fantaprof');
-                    launchUrl(url);
-                  },
-                )
-              ])
-              .sized(height: MediaQuery.of(context).size.height)
-              .withPadding(horizontal: 20, bottom: 0),
-          const FooterWidget()
-        ],
+    return ShadcnApp.router(
+      scrollBehavior: const ScrollBehavior(),
+      title: 'FantaProf',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme:
+            (MediaQuery.of(context).platformBrightness == Brightness.light
+                ? ColorSchemes.lightYellow()
+                : ColorSchemes.darkYellow()),
+        radius: 1,
+        surfaceOpacity: 0.5,
+        surfaceBlur: 20,
       ),
+      routerConfig: _router,
     );
   }
 }
 
-class FooterWidget extends StatelessWidget {
-  const FooterWidget({super.key});
+final GoRouter _router = GoRouter(
+  navigatorKey: _rootNavigatorKey,
+  initialLocation: '/about',
+  redirect: (BuildContext context, GoRouterState state) async {
+    print("test");
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Divider(
-          height: 60.0,
-        ).withPadding(
-            horizontal: SizeBased(context,
-                ifSmall: 20.0, ifLarge: 200.0, breakpoint: 1000)
-                .get()),
-        const Text("Sito protetto da Copyright - (C) 2025 Riccardo Debellini")
-            .muted()
-            .small()
-            .withPadding(
-            left: SizeBased(context,
-                ifSmall: 20.0, ifLarge: 200.0, breakpoint: 1000)
-                .get(),
-            right: SizeBased(context,
-                ifSmall: 20.0, ifLarge: 200.0, breakpoint: 1000)
-                .get(),
-            bottom: 30)
-      ],
-    );
-  }
-}
+    final bool isLoggedIn = supabase.auth.currentUser != null;
+    final bool isLogInOrSignUp = (state.matchedLocation == '/login' ||
+        state.matchedLocation == '/signup');
 
-class SizeBased {
-  final dynamic ifSmall;
-  final dynamic ifLarge;
-  final int breakpoint;
-  final BuildContext context;
+    if (isLoggedIn) {
+      print("isLoggedIn");
+      if (!isLogInOrSignUp) {
+        print("notLogInOrSignUp");
+        return null;
+      } else {
+        print("wasLogInOrSignUp");
+        return '/classes';
+      }
+    }
+    if (isLogInOrSignUp) {
+      print("isLogInOrSignUp");
+      return state.path;
+    } else {
+      print("wasNotLogInOrSignUp");
+      return '/about';
+    }
+  },
+  routes: [
+    GoRoute(
+      path: '/',
+      redirect: (BuildContext context, GoRouterState state) async {
+        final bool isLoggedIn = supabase.auth.currentUser != null;
 
-  const SizeBased(
-      this.context, {
-        required this.ifSmall,
-        required this.ifLarge,
-        this.breakpoint = 800,
-      });
-
-  get() {
-    final size = MediaQuery.of(context).size.width;
-    bool isLarge = true;
-    size < breakpoint ? isLarge = false : null;
-    if (isLarge) return ifLarge;
-    return ifSmall;
-  }
-}
+        if (isLoggedIn) {
+          return '/classes';
+        } else {
+          return '/about';
+        }
+      },
+    ),
+    GoRoute(
+        path: '/login',
+        builder: (context, state) {
+          return LoginPage();
+        }),
+    GoRoute(
+        path: '/signup',
+        builder: (context, state) {
+          return SignUpPage();
+        }),
+    GoRoute(
+        path: '/about',
+        builder: (context, state) {
+          return AboutPage();
+        }),
+    GoRoute(
+        path: '/classes',
+        builder: (context, state) {
+          return ClassesPage();
+        }),
+    GoRoute(
+        path: '/settings',
+        builder: (context, state) {
+          return SettingsPage();
+        })
+  ],
+);

@@ -25,49 +25,49 @@ class _SignUpWidgetState extends State<SignUpWidget> {
       padding: const EdgeInsets.all(24),
       child: Form(
         onSubmit: (context, values) async {
-          try {
-            final username =  values[FormKey(#_usernameKey)]
-            ;
-            print(username);
-            await supabase.auth.signUp(
-                password: values[FormKey(#password)] as String,
-                email: values[FormKey(#email)] as String);
+
+
+            try {
+              await supabase.auth.signUp(
+                  password: values[FormKey(#password)] as String,
+                  email: values[FormKey(#email)] as String);
 
 
 
-            await supabase.auth.signInWithPassword(
-                password: values[FormKey(#password)] as String,
-                email: values[FormKey(#email)] as String);
+              await supabase.auth.signInWithPassword(
+                  password: values[FormKey(#password)] as String,
+                  email: values[FormKey(#email)] as String);
+            } on AuthException catch (e) {
+              print(e.toString());
+              showToast(
+                  location: ToastLocation.bottomCenter,
+                  context: context,
+                  builder: (context, overlay) {
+                    return SurfaceCard(
+                      child: Basic(
+                        title: const Text('Errore'),
+                        subtitle: const Text('Ricontrolla email e password'),
+                        trailing: IconButton.text(
+                            size: ButtonSize.small,
+                            onPressed: () {
+                              overlay.close();
+                            },
+                            icon: const Icon(LucideIcons.x)),
+                        trailingAlignment: Alignment.center,
+                      ),
+                    );
+                  });
+            }
 
 
-            await supabase.auth.updateUser(
-              UserAttributes(
-                data: { 'name': username},
-              ),
-            );
+            await supabase
+              .from('users (public)')
+              .upsert({ 'user_id': supabase.auth.currentUser!.id, 'username': values[FormKey(#username)] as String})
+              .select();
 
-            context.go('/classes');
-          } catch (e) {
-            print(e.toString());
-            showToast(
-                location: ToastLocation.bottomCenter,
-                context: context,
-                builder: (context, overlay) {
-                  return SurfaceCard(
-                    child: Basic(
-                      title: const Text('Errore'),
-                      subtitle: const Text('Ricontrolla email e password'),
-                      trailing: IconButton.text(
-                          size: ButtonSize.small,
-                          onPressed: () {
-                            overlay.close();
-                          },
-                          icon: const Icon(LucideIcons.x)),
-                      trailingAlignment: Alignment.center,
-                    ),
-                  );
-                });
-          }
+
+          context.go('/classes');
+
         },
         child: SingleChildScrollView(
           child: Column(
@@ -84,12 +84,15 @@ class _SignUpWidgetState extends State<SignUpWidget> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   FormField(
+                    showErrors: {FormValidationMode.changed, FormValidationMode.submitted},
+                    validator: EmailValidator(message: "Inserisci un email valida"),
                     key: _emailKey,
                     label: const Text('Email'),
                     child: TextField(),
                   ),
                   Gap(16),
                   FormField(
+                    showErrors: {FormValidationMode.changed, FormValidationMode.submitted},
                     hint: Text(
                         "8 Caratteri (lettere maiuscole/minuscole e numeri)"),
                     key: _passwordKey,
@@ -121,6 +124,7 @@ class _SignUpWidgetState extends State<SignUpWidget> {
                   ),
                   Gap(16),
                   FormField(
+                    showErrors: {FormValidationMode.changed, FormValidationMode.submitted},
                     validator: CompareWith.equal(_passwordKey,
                         message: 'Le password non corrispondono'),
                     key: _confirmPasswordKey,
@@ -142,7 +146,10 @@ class _SignUpWidgetState extends State<SignUpWidget> {
                   ),
                   Gap(16),
                   FormField(
+                    showErrors: {FormValidationMode.changed, FormValidationMode.submitted},
+                    validator: LengthValidator(min: 3, message: "Minimo 3 caratteri").combine(LengthValidator(max: 20, message: "Massimo 20 caratteri")),
                     key: _usernameKey,
+                    hint: Text("Come vuoi essere chiamato all'interno dell'app\nPur essendo pubblico, non sarà unico. Per identificarti con precisione, ti assegneremo un UUID."),
                     label: const Text('Username'),
                     child: TextField(),
                   ),
@@ -154,7 +161,7 @@ class _SignUpWidgetState extends State<SignUpWidget> {
                   return PrimaryButton(
                     onPressed:
                         errors.isEmpty ? () => context.submitForm() : null,
-                    child: const Text('Entra'), // Changed button text
+                    child: const Text('Registrati'), // Changed button text
                   );
                 },
               ),

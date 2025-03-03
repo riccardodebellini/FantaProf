@@ -1,3 +1,4 @@
+import 'package:fanta_prof/src/utils/functions/userdata.function.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
@@ -16,12 +17,15 @@ class SettingsPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Safely access user metadata
-          IconButton.primary(icon: Icon(LucideIcons.arrow_left), onPressed: () {
-            context.go('/classes');
-          },),
-          Text("Ciao ${supabase.auth.currentUser?.userMetadata?['name'] ?? "Utente"}")
-              .large()
-              .medium(),
+          IconButton.primary(
+            icon: Icon(LucideIcons.arrow_left),
+            onPressed: () {
+              context.go('/classes');
+            },
+          ),
+          FutureBuilder(
+              future: GetUsername.future(),
+              builder: GetUsername.buildWelcomeText),
           Text(supabase.auth.currentUser?.email ?? "")
               .muted(), // Handle null email
           Gap(16),

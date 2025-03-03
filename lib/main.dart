@@ -54,27 +54,21 @@ final GoRouter _router = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/about',
   redirect: (BuildContext context, GoRouterState state) async {
-    print("test");
 
     final bool isLoggedIn = supabase.auth.currentUser != null;
     final bool isLogInOrSignUp = (state.matchedLocation == '/login' ||
         state.matchedLocation == '/signup');
 
     if (isLoggedIn) {
-      print("isLoggedIn");
       if (!isLogInOrSignUp) {
-        print("notLogInOrSignUp");
         return null;
       } else {
-        print("wasLogInOrSignUp");
         return '/classes';
       }
     }
     if (isLogInOrSignUp) {
-      print("isLogInOrSignUp");
       return state.path;
     } else {
-      print("wasNotLogInOrSignUp");
       return '/about';
     }
   },

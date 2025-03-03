@@ -1,6 +1,8 @@
-import 'package:fanta_prof/src/widgets/signup.widget.dart';
+
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../utils/widgets/signup.widget.dart';
 
 final supabase = Supabase.instance.client;
 
